@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real-Time Stock Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
+        h1 { color: #333; }
+        #status { font-style: italic; color: #555; }
+        #stocks { margin-top: 20px; }
+        .stock-item {
+            background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px;
+            border-radius: 5px; font-size: 1.2em; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.5s ease;
+        }
+        .item { font-weight: bold; color: #0056b3; }
+        .price { float: right; color: #008000; }
+        .price.down { color: #d90000; }
+        .highlight { background-color: #ffffe0 !important; }
+    </style>
+</head>
+<body>
+
+    <h1>Real-Time Marketplace</h1>
+    <div id="status">Menghubungkan ke server...</div>
+    <div id="stocks">
+        <p>Belum ada item.</p>
+    </div>
+
+<script>
+    let stockPrices = {}; 
+    const statusDiv = document.getElementById('status');
+    const stocksDiv = document.getElementById('stocks');
+    
+    function upsertStockElement(stock) {
+        const placeholder = stocksDiv.querySelector('p');
+        if (placeholder) placeholder.remove();
+
+        let stockElement = document.getElementById(`stock-${stock.id}`);
+        let priceChangeClass = '';
+
+        if (stockPrices[stock.id]) {
+            if (stock.price < stockPrices[stock.id]) priceChangeClass = 'down';
+        }
+        stockPrices[stock.id] = stock.price;
+
+        // --- DIUBAH: Buat variabel harga Rupiah ---
+        const formattedPrice = 'Rp' + stock.price.toLocaleString('id-ID');
+
+        if (stockElement) {
+            // --- UPDATE ---
+            const priceElement = stockElement.querySelector('.price');
+            priceElement.textContent = formattedPrice; // <-- DIUBAH
+            priceElement.className = `price ${priceChangeClass}`;
+            stockElement.querySelector('.item').textContent = stock.item; 
+            highlightElement(stockElement);
+        } else {
+            // --- CREATE ---
+            stockElement = document.createElement('div');
+            stockElement.className = 'stock-item';
+            stockElement.id = `stock-${stock.id}`;
+            stockElement.innerHTML = `
+                <span class="item">${stock.item}</span>
+                <span class="price ${priceChangeClass}">${formattedPrice}</span> `;
+            stocksDiv.appendChild(stockElement);
+            highlightElement(stockElement);
+        }
+    }
+
+    // deleteStockElement (tidak berubah)
+    function deleteStockElement(stock) {
+        let stockElement = document.getElementById(`stock-${stock.id}`);
+        if (stockElement) {
+            stockElement.remove();
+        }
+        delete stockPrices[stock.id];
+        if (stocksDiv.children.length === 0) {
+            stocksDiv.innerHTML = '<p>Belum ada data item.</p>';
+        }
+    }
+    
+    // highlightElement (tidak berubah)
+    function highlightElement(el) {
+        el.classList.add('highlight');
+        setTimeout(() => {
+            el.classList.remove('highlight');
+        }, 1000); 
+    }
+
+    // --- Logika WebSocket (tidak berubah) ---
+    const ws = new WebSocket("ws://localhost:8080/ws");
+
+    ws.onopen = function(event) {
+        statusDiv.textContent = "Terhubung.";
+    };
+
+    ws.onclose = function(event) {
+        statusDiv.textContent = "Koneksi terputus.";
+        statusDiv.style.color = "red";
+    };
+
+    ws.onmessage = function(event) {
+        const msg = JSON.parse(event.data);
+        const stock = msg.payload;
+
+        console.log("Menerima pesan:", msg.type, msg.payload);
+
+        if (msg.type === "CREATE" || msg.type === "UPDATE") {
+            upsertStockElement(stock);
+        } else if (msg.type === "DELETE") {
+            deleteStockElement(stock);
+        }
+    };
+
+    ws.onerror = function(error) {
+        console.error("WebSocket Error:", error);
+        statusDiv.textContent = "Error koneksi.";
+    };
+</script>
+</body>
+</html>

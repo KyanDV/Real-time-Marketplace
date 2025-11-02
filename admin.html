@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Kelola Marketplace</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h2 { color: #333; }
+        #stock-list { margin-top: 20px; }
+        .stock-item { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .form-container { background: #eee; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        input[type="text"], input[type="number"] { padding: 8px; margin-right: 10px; }
+        .btn { padding: 8px 12px; cursor: pointer; border: none; border-radius: 3px; }
+        .btn-save { background: #28a745; color: white; }
+        .btn-edit { background: #007bff; color: white; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-cancel { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Panel Admin Marketplace</h1>
+    
+    <div class="form-container">
+        <h2>Formulir Marketplace</h2>
+        <form id="stock-form">
+            <input type="hidden" id="stock-id">
+            <input type="text" id="stock-item" placeholder="Nama Item" required> 
+            <input type="number" id="stock-price" placeholder="Harga" step="1" required>
+            <button type="submit" class="btn btn-save" id="save-button">Tambah Item</button>
+            <button type="button" class="btn btn-cancel" id="cancel-button" style="display:none;">Batal</button>
+        </form>
+    </div>
+
+    <h2>Daftar Marketplace Saat Ini</h2>
+    <div id="stock-list">
+        </div>
+
+<script>
+    const form = document.getElementById('stock-form');
+    const stockListDiv = document.getElementById('stock-list');
+    const stockIdInput = document.getElementById('stock-id');
+    const stockItemInput = document.getElementById('stock-item'); 
+    const stockPriceInput = document.getElementById('stock-price');
+    const saveButton = document.getElementById('save-button');
+    const cancelButton = document.getElementById('cancel-button');
+
+    // 1. loadStocks (tidak berubah)
+    async function loadStocks() {
+        const response = await fetch('/api/stocks');
+        const stocks = await response.json();
+        
+        stockListDiv.innerHTML = ''; 
+        if (!stocks) return;
+
+        stocks.forEach(stock => {
+            stockListDiv.appendChild(createStockElement(stock));
+        });
+    }
+
+    // 2. submit form (tidak berubah)
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const id = stockIdInput.value;
+        const item = stockItemInput.value; 
+        const price = parseFloat(stockPriceInput.value);
+
+        const stockData = { id, item, price }; 
+        
+        let method = 'POST'; 
+        let url = '/api/stock';
+        
+        if (id) {
+            method = 'PUT';
+        }
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(stockData)
+            });
+
+            if (response.ok) {
+                resetForm();
+                await loadStocks(); 
+            } else {
+                alert("Gagal menyimpan stok.");
+            }
+        } catch (err) {
+            console.error("Error:", err);
+            alert("Error: " + err.message);
+        }
+    });
+
+    // 3. deleteStock (tidak berubah)
+    async function deleteStock(id) {
+        if (!confirm("Anda yakin ingin menghapus stok ini?")) return;
+        
+        try {
+            const response = await fetch('/api/stock', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id }) 
+            });
+
+            if (response.ok) {
+                await loadStocks();
+            } else {
+                alert("Gagal menghapus stok.");
+            }
+        } catch (err) {
+            console.error("Error:", err);
+            alert("Error: " + err.message);
+        }
+    }
+
+    // 4. editStock (tidak berubah)
+    function editStock(id, item, price) { 
+        stockIdInput.value = id;
+        stockItemInput.value = item; 
+        stockPriceInput.value = price;
+        
+        saveButton.textContent = 'Perbarui Stok';
+        cancelButton.style.display = 'inline-block';
+        window.scrollTo(0, 0); 
+    }
+
+    // 5. Tombol Batal (tidak berubah)
+    cancelButton.addEventListener('click', resetForm);
+
+    // --- Fungsi Helper ---
+    function resetForm() {
+        form.reset();
+        stockIdInput.value = '';
+        saveButton.textContent = 'Tambah Stok';
+        cancelButton.style.display = 'none';
+    }
+
+    function createStockElement(stock) {
+        const div = document.createElement('div');
+        div.className = 'stock-item';
+        div.setAttribute('data-id', stock.id);
+        
+        // --- DIUBAH: Format harga menjadi Rupiah ---
+        const formattedPrice = 'Rp' + stock.price.toLocaleString('id-ID');
+        
+        div.innerHTML = `
+            <div>
+                <strong>${stock.item}</strong> - ${formattedPrice}
+            </div>
+            <div>
+                <button class"btn btn-edit" onclick="editStock('${stock.id}', '${stock.item}', ${stock.price})">Edit</button>
+                <button class"btn btn-delete" onclick="deleteStock('${stock.id}')">Delete</button>
+            </div>
+        `;
+        return div;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadStocks);
+
+</script>
+</body>
+</html>
