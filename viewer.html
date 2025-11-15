@@ -44,18 +44,15 @@
         }
         stockPrices[stock.id] = stock.price;
 
-        // --- DIUBAH: Buat variabel harga Rupiah ---
         const formattedPrice = 'Rp' + stock.price.toLocaleString('id-ID');
 
         if (stockElement) {
-            // --- UPDATE ---
             const priceElement = stockElement.querySelector('.price');
             priceElement.textContent = formattedPrice; // <-- DIUBAH
             priceElement.className = `price ${priceChangeClass}`;
             stockElement.querySelector('.item').textContent = stock.item; 
             highlightElement(stockElement);
         } else {
-            // --- CREATE ---
             stockElement = document.createElement('div');
             stockElement.className = 'stock-item';
             stockElement.id = `stock-${stock.id}`;
@@ -67,7 +64,6 @@
         }
     }
 
-    // deleteStockElement (tidak berubah)
     function deleteStockElement(stock) {
         let stockElement = document.getElementById(`stock-${stock.id}`);
         if (stockElement) {
@@ -79,15 +75,13 @@
         }
     }
     
-    // highlightElement (tidak berubah)
     function highlightElement(el) {
         el.classList.add('highlight');
         setTimeout(() => {
             el.classList.remove('highlight');
         }, 1000); 
     }
-
-    // --- Logika WebSocket (tidak berubah) ---
+    
     const ws = new WebSocket("ws://localhost:8080/ws");
 
     ws.onopen = function(event) {
