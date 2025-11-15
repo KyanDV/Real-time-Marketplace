@@ -10,22 +10,17 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// --- Struct Utama ---
-
-// Stock merepresentasikan data kita
 type Stock struct {
 	ID    string  `json:"id"`
 	Item  string  `json:"item"`
 	Price float64 `json:"price"`
 }
 
-// WebSocketMessage (tidak berubah)
 type WebSocketMessage struct {
 	Type    string `json:"type"`
 	Payload Stock  `json:"payload"`
 }
 
-// Store (tidak berubah)
 type Store struct {
 	stocks map[string]Stock
 	mu     sync.RWMutex
@@ -36,8 +31,6 @@ func NewStore() *Store {
 		stocks: make(map[string]Stock),
 	}
 }
-
-// --- Hub WebSocket (tidak berubah) ---
 
 type Hub struct {
 	clients   map[*websocket.Conn]bool
@@ -68,7 +61,6 @@ func (h *Hub) run() {
 	}
 }
 
-// handleWebSocket (tidak berubah)
 func (h *Hub) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	var upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
@@ -99,9 +91,6 @@ func (h *Hub) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// --- Handler API CRUD ---
-
-// handleGetStocks (tidak berubah)
 func (s *Store) handleGetStocks(w http.ResponseWriter, r *http.Request) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -115,7 +104,6 @@ func (s *Store) handleGetStocks(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(stockList)
 }
 
-// handleStock CRUD
 func (s *Store) handleStock(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	var stock Stock
 	if err := json.NewDecoder(r.Body).Decode(&stock); err != nil {
@@ -126,15 +114,15 @@ func (s *Store) handleStock(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	var msgType string
 
 	switch r.Method {
-	case "POST": // CREATE
+	case "POST": 
 		stock.ID = uuid.New().String()
 		s.mu.Lock()
 		s.stocks[stock.ID] = stock
 		s.mu.Unlock()
 		msgType = "CREATE"
-		log.Printf("Stok DIBUAT: %s", stock.Item) // <--- DIGANTI
+		log.Printf("Stok DIBUAT: %s", stock.Item)
 
-	case "PUT": // UPDATE
+	case "PUT": 
 		if stock.ID == "" {
 			http.Error(w, "ID diperlukan untuk update", http.StatusBadRequest)
 			return
@@ -143,9 +131,9 @@ func (s *Store) handleStock(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		s.stocks[stock.ID] = stock
 		s.mu.Unlock()
 		msgType = "UPDATE"
-		log.Printf("Stok DIPERBARUI: %s", stock.Item) // <--- DIGANTI
+		log.Printf("Stok DIPERBARUI: %s", stock.Item)
 
-	case "DELETE": // DELETE
+	case "DELETE": 
 		if stock.ID == "" {
 			http.Error(w, "ID diperlukan untuk delete", http.StatusBadRequest)
 			return
@@ -154,7 +142,7 @@ func (s *Store) handleStock(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		delete(s.stocks, stock.ID)
 		s.mu.Unlock()
 		msgType = "DELETE"
-		log.Printf("Stok DIHAPUS: %s", stock.Item) // <--- DIGANTI
+		log.Printf("Stok DIHAPUS: %s", stock.Item) 
 
 	default:
 		http.Error(w, "Metode tidak diizinkan", http.StatusMethodNotAllowed)
@@ -171,8 +159,6 @@ func (s *Store) handleStock(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(stock)
 }
 
-// --- Handler Penyaji Halaman (tidak berubah) ---
-
 func serveAdminPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "admin.html")
 }
@@ -180,8 +166,6 @@ func serveAdminPage(w http.ResponseWriter, r *http.Request) {
 func serveViewerPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "viewer.html")
 }
-
-// --- Main (tidak berubah) ---
 
 func main() {
 	hub := NewHub()
