@@ -45,7 +45,6 @@
     const saveButton = document.getElementById('save-button');
     const cancelButton = document.getElementById('cancel-button');
 
-    // 1. loadStocks (tidak berubah)
     async function loadStocks() {
         const response = await fetch('/api/stocks');
         const stocks = await response.json();
@@ -58,7 +57,6 @@
         });
     }
 
-    // 2. submit form (tidak berubah)
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -94,10 +92,9 @@
         }
     });
 
-    // 3. deleteStock (tidak berubah)
+  
     async function deleteStock(id) {
         if (!confirm("Anda yakin ingin menghapus stok ini?")) return;
-        
         try {
             const response = await fetch('/api/stock', {
                 method: 'DELETE',
@@ -116,7 +113,7 @@
         }
     }
 
-    // 4. editStock (tidak berubah)
+    
     function editStock(id, item, price) { 
         stockIdInput.value = id;
         stockItemInput.value = item; 
@@ -127,10 +124,10 @@
         window.scrollTo(0, 0); 
     }
 
-    // 5. Tombol Batal (tidak berubah)
+   
     cancelButton.addEventListener('click', resetForm);
 
-    // --- Fungsi Helper ---
+ 
     function resetForm() {
         form.reset();
         stockIdInput.value = '';
@@ -142,8 +139,6 @@
         const div = document.createElement('div');
         div.className = 'stock-item';
         div.setAttribute('data-id', stock.id);
-        
-        // --- DIUBAH: Format harga menjadi Rupiah ---
         const formattedPrice = 'Rp' + stock.price.toLocaleString('id-ID');
         
         div.innerHTML = `
