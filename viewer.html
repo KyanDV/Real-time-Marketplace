@@ -16,7 +16,10 @@
         .item { font-weight: bold; color: #0056b3; }
         .price { float: right; color: #008000; }
         .price.down { color: #d90000; }
+        .quantity { color: #666; font-size: 0.9em; margin-top: 5px; }
         .highlight { background-color: #ffffe0 !important; }
+        .stock-details { display: flex; justify-content: space-between; align-items: center; }
+        .stock-info { flex-grow: 1; }
     </style>
 </head>
 <body>
@@ -29,6 +32,7 @@
 
 <script>
     let stockPrices = {}; 
+    let stockQuantities = {};
     const statusDiv = document.getElementById('status');
     const stocksDiv = document.getElementById('stocks');
     
@@ -39,17 +43,23 @@
         let stockElement = document.getElementById(`stock-${stock.id}`);
         let priceChangeClass = '';
 
-        if (stockPrices[stock.id]) {
+        // Cek perubahan harga
+        if (stockPrices[stock.id] !== undefined) {
             if (stock.price < stockPrices[stock.id]) priceChangeClass = 'down';
+            else if (stock.price > stockPrices[stock.id]) priceChangeClass = 'up';
         }
         stockPrices[stock.id] = stock.price;
+        stockQuantities[stock.id] = stock.quantity;
 
         const formattedPrice = 'Rp' + stock.price.toLocaleString('id-ID');
 
         if (stockElement) {
             const priceElement = stockElement.querySelector('.price');
-            priceElement.textContent = formattedPrice; // <-- DIUBAH
+            const quantityElement = stockElement.querySelector('.quantity');
+            
+            priceElement.textContent = formattedPrice;
             priceElement.className = `price ${priceChangeClass}`;
+            quantityElement.textContent = `Quantity: ${stock.quantity}`;
             stockElement.querySelector('.item').textContent = stock.item; 
             highlightElement(stockElement);
         } else {
@@ -57,8 +67,13 @@
             stockElement.className = 'stock-item';
             stockElement.id = `stock-${stock.id}`;
             stockElement.innerHTML = `
-                <span class="item">${stock.item}</span>
-                <span class="price ${priceChangeClass}">${formattedPrice}</span> `;
+                <div class="stock-details">
+                    <div class="stock-info">
+                        <div class="item">${stock.item}</div>
+                        <div class="quantity">Quantity: ${stock.quantity}</div>
+                    </div>
+                    <span class="price ${priceChangeClass}">${formattedPrice}</span>
+                </div>`;
             stocksDiv.appendChild(stockElement);
             highlightElement(stockElement);
         }
@@ -70,6 +85,7 @@
             stockElement.remove();
         }
         delete stockPrices[stock.id];
+        delete stockQuantities[stock.id];
         if (stocksDiv.children.length === 0) {
             stocksDiv.innerHTML = '<p>Belum ada data item.</p>';
         }
