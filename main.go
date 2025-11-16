@@ -11,9 +11,10 @@ import (
 )
 
 type Stock struct {
-	ID    string  `json:"id"`
-	Item  string  `json:"item"`
-	Price float64 `json:"price"`
+	ID       string  `json:"id"`
+	Item     string  `json:"item"`
+	Price    float64 `json:"price"`
+	Quantity int     `json:"quantity"` // TAMBAHAN: Field quantity
 }
 
 type WebSocketMessage struct {
@@ -114,15 +115,15 @@ func (s *Store) handleStock(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	var msgType string
 
 	switch r.Method {
-	case "POST": 
+	case "POST":
 		stock.ID = uuid.New().String()
 		s.mu.Lock()
 		s.stocks[stock.ID] = stock
 		s.mu.Unlock()
 		msgType = "CREATE"
-		log.Printf("Stok DIBUAT: %s", stock.Item)
+		log.Printf("Stok DIBUAT: %s (Qty: %d)", stock.Item, stock.Quantity)
 
-	case "PUT": 
+	case "PUT":
 		if stock.ID == "" {
 			http.Error(w, "ID diperlukan untuk update", http.StatusBadRequest)
 			return
@@ -131,9 +132,9 @@ func (s *Store) handleStock(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		s.stocks[stock.ID] = stock
 		s.mu.Unlock()
 		msgType = "UPDATE"
-		log.Printf("Stok DIPERBARUI: %s", stock.Item)
+		log.Printf("Stok DIPERBARUI: %s (Qty: %d)", stock.Item, stock.Quantity)
 
-	case "DELETE": 
+	case "DELETE":
 		if stock.ID == "" {
 			http.Error(w, "ID diperlukan untuk delete", http.StatusBadRequest)
 			return
@@ -142,7 +143,7 @@ func (s *Store) handleStock(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		delete(s.stocks, stock.ID)
 		s.mu.Unlock()
 		msgType = "DELETE"
-		log.Printf("Stok DIHAPUS: %s", stock.Item) 
+		log.Printf("Stok DIHAPUS: %s", stock.Item)
 
 	default:
 		http.Error(w, "Metode tidak diizinkan", http.StatusMethodNotAllowed)
