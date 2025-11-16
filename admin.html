@@ -9,12 +9,43 @@
         #stock-list { margin-top: 20px; }
         .stock-item { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
         .form-container { background: #eee; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        input[type="text"], input[type="number"] { padding: 8px; margin-right: 10px; }
+        .form-row { 
+            display: flex; 
+            gap: 10px; 
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .form-group { 
+            display: flex; 
+            flex-direction: column;
+            flex: 1;
+            min-width: 120px;
+        }
+        .form-group label {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"] { 
+            padding: 8px; 
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            width: 100%;
+            box-sizing: border-box;
+        }
         .btn { padding: 8px 12px; cursor: pointer; border: none; border-radius: 3px; }
         .btn-save { background: #28a745; color: white; }
         .btn-edit { background: #007bff; color: white; }
         .btn-delete { background: #dc3545; color: white; }
         .btn-cancel { background: #6c757d; color: white; }
+        .stock-info { flex-grow: 1; }
+        .stock-quantity { color: #666; font-size: 0.9em; }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -25,16 +56,35 @@
         <h2>Formulir Catalog</h2>
         <form id="stock-form">
             <input type="hidden" id="stock-id">
-            <input type="text" id="stock-item" placeholder="Nama Item" required> 
-            <input type="number" id="stock-price" placeholder="Harga" step="1" required>
-            <button type="submit" class="btn btn-save" id="save-button">Tambah Item</button>
-            <button type="button" class="btn btn-cancel" id="cancel-button" style="display:none;">Batal</button>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="stock-item">Nama Item</label>
+                    <input type="text" id="stock-item" placeholder="Nama Item" required> 
+                </div>
+                
+                <div class="form-group">
+                    <label for="stock-price">Harga</label>
+                    <input type="number" id="stock-price" placeholder="Harga" step="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="stock-quantity">Quantity</label>
+                    <input type="number" id="stock-quantity" placeholder="Quantity" step="1" min="0" required>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="btn btn-save" id="save-button">Tambah Item</button>
+                <button type="button" class="btn btn-cancel" id="cancel-button" style="display:none;">Batal</button>
+            </div>
         </form>
     </div>
 
     <h2>Daftar Catalog Saat Ini</h2>
     <div id="stock-list">
-        </div>
+        <!-- Daftar stok akan dimuat di sini -->
+    </div>
 
 <script>
     const form = document.getElementById('stock-form');
@@ -42,6 +92,7 @@
     const stockIdInput = document.getElementById('stock-id');
     const stockItemInput = document.getElementById('stock-item'); 
     const stockPriceInput = document.getElementById('stock-price');
+    const stockQuantityInput = document.getElementById('stock-quantity');
     const saveButton = document.getElementById('save-button');
     const cancelButton = document.getElementById('cancel-button');
 
@@ -50,7 +101,10 @@
         const stocks = await response.json();
         
         stockListDiv.innerHTML = ''; 
-        if (!stocks) return;
+        if (!stocks || stocks.length === 0) {
+            stockListDiv.innerHTML = '<p>Belum ada item catalog.</p>';
+            return;
+        }
 
         stocks.forEach(stock => {
             stockListDiv.appendChild(createStockElement(stock));
@@ -63,8 +117,9 @@
         const id = stockIdInput.value;
         const item = stockItemInput.value; 
         const price = parseFloat(stockPriceInput.value);
+        const quantity = parseInt(stockQuantityInput.value);
 
-        const stockData = { id, item, price }; 
+        const stockData = { id, item, price, quantity }; 
         
         let method = 'POST'; 
         let url = '/api/stock';
@@ -114,10 +169,11 @@
     }
 
     
-    function editStock(id, item, price) { 
+    function editStock(id, item, price, quantity) { 
         stockIdInput.value = id;
         stockItemInput.value = item; 
         stockPriceInput.value = price;
+        stockQuantityInput.value = quantity;
         
         saveButton.textContent = 'Perbarui Stok';
         cancelButton.style.display = 'inline-block';
@@ -142,12 +198,13 @@
         const formattedPrice = 'Rp' + stock.price.toLocaleString('id-ID');
         
         div.innerHTML = `
-            <div>
-                <strong>${stock.item}</strong> - ${formattedPrice}
+            <div class="stock-info">
+                <div><strong>${stock.item}</strong> - ${formattedPrice}</div>
+                <div class="stock-quantity">Quantity: ${stock.quantity}</div>
             </div>
             <div>
-                <button class"btn btn-edit" onclick="editStock('${stock.id}', '${stock.item}', ${stock.price})">Edit</button>
-                <button class"btn btn-delete" onclick="deleteStock('${stock.id}')">Delete</button>
+                <button class="btn btn-edit" onclick="editStock('${stock.id}', '${stock.item}', ${stock.price}, ${stock.quantity})">Edit</button>
+                <button class="btn btn-delete" onclick="deleteStock('${stock.id}')">Delete</button>
             </div>
         `;
         return div;
