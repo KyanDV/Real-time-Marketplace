@@ -14,7 +14,7 @@ type Stock struct {
 	ID       string  `json:"id"`
 	Item     string  `json:"item"`
 	Price    float64 `json:"price"`
-	Quantity int     `json:"quantity"` // TAMBAHAN: Field quantity
+	Quantity int     `json:"quantity"`
 }
 
 type WebSocketMessage struct {
