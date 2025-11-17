@@ -43,7 +43,6 @@
         let stockElement = document.getElementById(`stock-${stock.id}`);
         let priceChangeClass = '';
 
-        // Cek perubahan harga
         if (stockPrices[stock.id] !== undefined) {
             if (stock.price < stockPrices[stock.id]) priceChangeClass = 'down';
             else if (stock.price > stockPrices[stock.id]) priceChangeClass = 'up';
